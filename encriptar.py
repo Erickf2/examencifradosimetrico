@@ -1,58 +1,38 @@
-from cryptography.fernet import Fernet
-from PIL import Image
+import os
 
-def es_imagen(arch):
-    try:
-        Image.open(arch)
-        return True
-    except:
-        return False
+def obtener_ruta_imagen():
+    ruta_imagen = input("Por favor, ingresa la ruta de la imagen: ")
+    extension = os.path.splitext(ruta_imagen)[1].upper()
 
-def genera_clave(tamano):
-    clave = Fernet.generate_key()
-    # Añadir el tamaño deseado al final de la clave
-    clave = clave + str(tamano).encode()
-    with open("clave.key", "wb") as key:
-        key.write(clave)
+    while extension not in [".JPEG", ".PNG", ".JPG"]:
+        print("Por favor, ingresa una imagen con extensión .JPEG, .PNG o .JPG.")
+        ruta_imagen = input("Por favor, ingresa la ruta de la imagen: ")
+        extension = os.path.splitext(ruta_imagen)[1].upper()
 
-def cargar_clave():
-    return open("clave.key", "rb").read()
+    return ruta_imagen
 
-def encript(arch, clave, tamano):
-    f = Fernet(clave)
-    # Añadir el tamaño al final de los datos antes de encriptar
-    with open(arch, "rb") as file:
-        info = file.read() + str(tamano).encode()
-    encrypted_data = f.encrypt(info)
-    with open(arch, "wb") as file:
-        file.write(encrypted_data)
+def obtener_numero_clave():
+    while True:
+        try:
+            numero = int(input("Por favor, ingresa un número (clave): "))
+            break
+        except ValueError:
+            print("Por favor, ingresa un número entero.")
 
-def desencript(arch, clave):
-    f = Fernet(clave)
-    with open(arch, "rb") as file:
-        encrypted_data = file.read()
-    decrypted_data = f.decrypt(encrypted_data)
-    tamano = int(decrypted_data[-1:])
-    decrypted_data = decrypted_data[:-1]
-    with open(arch, "wb") as file:
-        file.write(decrypted_data)
-    print(f"Tamaño personalizado: {tamano}")
+    return numero
 
-tamano_personalizado = int(input("Ingrese el tamaño deseado para la encriptación: "))
+def cifrar_imagen(ruta_imagen, numero):
+    with open(ruta_imagen, "rb") as file:
+        image = bytearray(file.read())
 
-genera_clave(tamano_personalizado)
+    for i, j in enumerate(image):
+        image[i] = j ^ numero
 
-clave = cargar_clave()
+    with open("imagen_cifrada.jpg", "wb") as file:
+        file.write(image)
 
-arch = input("Ingrese la ruta del archivo: ")
+if __name__ == "__main__":
+    ruta_imagen = obtener_ruta_imagen()
+    numero_clave = obtener_numero_clave()
 
-if es_imagen(arch):
-    checker = input("Encriptar o desencriptar? (E/D)")
-    if checker.lower() == "e":
-        encript(arch, clave, tamano_personalizado)
-    elif checker.lower() == "d":
-        desencript(arch, clave)
-    else:
-        print("Opción no válida. Intentelo de nuevo.")
-else:
-    print("El archivo no es una imagen.")
+    cifrar_imagen(ruta_imagen, numero_clave)
